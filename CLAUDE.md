@@ -47,6 +47,9 @@ Each paper entry in a notes file should follow this structure:
 - **Pros:** 1-2 sentences on the main strengths/advantages over prior work.
 - **Cons:** 1-2 sentences on the main limitations or trade-offs.
 
+**Key Takeaways**
+- 2-5 bullets distilling the single most important insight(s) a reader should remember from this paper.
+
 **Q&As**   
 Q1: Question text.
 
