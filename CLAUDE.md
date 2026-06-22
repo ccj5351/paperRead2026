@@ -12,6 +12,10 @@ Paper reading and study repo.
 
 Always add a TOC at the beginning of every markdown file (right after the `# title`). Keep section titles short and simple so anchors are clean.
 
+If a section title is long or contains special characters (colons, em dashes, non-ASCII symbols) that make the auto-generated GitHub anchor unreliable, give that heading an explicit short anchor instead: `## N. <a id="short-id"></a>Full Section Title`, and link to it from the TOC with `#short-id`.
+
+Give the TOC itself an anchor (`<a id="toc"></a>` right before the TOC text), and add a `[↑ Back to TOC](#toc)` link at the end of each section (just before the `---` separator, or at the end of the file for the last section) so readers can jump back up easily.
+
 ### Images
 
 Always use this HTML format for images — never bare `![alt](path)` markdown syntax:
@@ -32,6 +36,10 @@ Each paper entry in a notes file should follow this structure:
 ```markdown
 ## N. Paper Title — Venue/Year
 
+**TL;DR**
+
+2-3 sentences summarizing the paper's core idea, method, and result, written for someone skimming the notes.
+
 **Why / What.** One paragraph: the problem with prior approaches, and what this paper does differently.
 
 **How**  
@@ -49,10 +57,6 @@ Each paper entry in a notes file should follow this structure:
 
 **Key Takeaways**
 - 2-5 bullets distilling the single most important insight(s) a reader should remember from this paper.
-
-**TL;DR**
-
-2-3 sentences summarizing the paper's core idea, method, and result, written for someone skimming the notes.
 
 **Q&As**   
 Q1: Question text.

@@ -13,10 +13,10 @@ Paper reading and study repo, organized by topic subfolder. Each subfolder conta
 
 Each paper entry in a study-notes file follows a common structure (see [CLAUDE.md](CLAUDE.md) for the full template):
 
+- **TL;DR** — 2-3 sentences summarizing the core idea, method, and result.
 - **Why / What** — the problem with prior approaches, and what this paper does differently.
 - **How** — bullet points on the method, architecture, and key design decisions.
 - **Figure** — an architecture diagram or other supporting image.
 - **Pros and Cons** — main strengths and main limitations/trade-offs.
 - **Key Takeaways** — 2-5 bullets distilling the most important insight(s) to remember.
-- **TL;DR** — 2-3 sentences summarizing the core idea, method, and result.
 - **Q&As** — follow-up questions and answers, with supporting figures if relevant.
