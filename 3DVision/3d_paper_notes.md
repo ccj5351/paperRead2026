@@ -115,7 +115,7 @@ The second term is the $\color{red}{\text{regularizer}}$ that keeps the confiden
 - Video depth falls out for free, since the optimized global representation is parameterized directly by camera pose and per-frame depth maps.
 
 <div align="center">
-    <img src="figures/monst3r_arch_fig3.png" alt="MonST3R dynamic global point cloud and camera pose pipeline" width="800">
+    <img src="figures/monst3r_arch_fig3.png" alt="MonST3R dynamic global point cloud and camera pose pipeline" width="700">
     <p><em>Figure: MonST3R's sliding-window pairwise pointmap/flow estimation feeding a global optimization over point cloud and camera parameters.</em></p>
 </div>
 
