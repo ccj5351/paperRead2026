@@ -50,6 +50,10 @@ Each paper entry in a notes file should follow this structure:
 **Key Takeaways**
 - 2-5 bullets distilling the single most important insight(s) a reader should remember from this paper.
 
+**TL;DR**
+
+2-3 sentences summarizing the paper's core idea, method, and result, written for someone skimming the notes.
+
 **Q&As**   
 Q1: Question text.
 

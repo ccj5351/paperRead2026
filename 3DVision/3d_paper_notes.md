@@ -35,6 +35,10 @@ Papers covered, in chronological order:
 - The fix is architecture-agnostic and nearly zero-cost (a few extra learnable tokens, discarded at output), with no measured downside across supervised, text-supervised, and self-supervised training.
 - This insight directly motivates later multi-view 3D transformers (VGGT, VGGT-Ω) to use per-frame "camera/scene" register tokens as the designated channel for cross-frame information exchange.
 
+**TL;DR**
+
+Large ViTs spontaneously hijack a few redundant, locally-uninformative patch tokens to use as scratch space for global computation, and this shows up as high-norm attention artifacts that hurt interpretability and dense prediction. Adding a handful of dedicated, discardable "register" tokens gives the model an explicit place to do this bookkeeping instead, removing the artifacts entirely at essentially zero cost. This simple trick later becomes a core building block for multi-view 3D transformers (VGGT, VGGT-Ω), which repurpose registers as the channel for cross-frame information exchange.
+
 ---
 
 ## 2. DUSt3R: Geometric 3D Vision Made Easy — CVPR24
@@ -60,6 +64,10 @@ Papers covered, in chronological order:
 - Replacing the classical SfM/MVS pipeline's brittle sequential sub-problems with one end-to-end-trained regression network lets each sub-task implicitly help the others, removing the need for known intrinsics/extrinsics entirely.
 - Bundle adjustment's reprojection-error minimization can be swapped for a much faster direct 3D-space alignment optimization, since the network already outputs near-consistent 3D geometry.
 - A learned per-pixel confidence is an effective, supervision-free way to let the network flag genuinely ill-posed regions (single-view-only areas, sky, translucent surfaces) without hurting accuracy elsewhere.
+
+**TL;DR**
+
+DUSt3R replaces the classical, brittle SfM/MVS pipeline with a single feed-forward network that regresses dense 3D pointmaps directly from a pair of uncalibrated, unposed images. Cameras, depth, and pixel correspondences all fall out of these pointmaps post hoc, so the network never has to explicitly solve for camera parameters, and a learned confidence map flags genuinely ambiguous regions for free. For scenes with more than two images, a fast direct-3D-space global alignment step stitches all pairwise pointmaps into one consistent frame, standing in for traditional bundle adjustment.
 
 **Q&As**
 Q1: Training Loss Understanding
@@ -100,6 +108,10 @@ The second term is the $\color{red}{\text{regularizer}}$ that keeps the confiden
 - Dense matching's quadratic NN-search cost can be cut to near-linear with an iterative reciprocal-matching scheme that exploits cycle consistency, and that subsampling can simultaneously act as outlier filtering, improving rather than hurting accuracy.
 - Coarse-to-fine matching (downscale-then-refine via window crops) is a generally reusable trick for applying quadratic-attention ViTs to high-resolution images without retraining at high resolution.
 
+**TL;DR**
+
+MASt3R augments the DUSt3R backbone with a second head that regresses dense local features under an InfoNCE matching loss, grounding 2D pixel matching in the same 3D-aware representation used for pointmap regression. A fast reciprocal nearest-neighbor matching algorithm makes dense, pixel-accurate matching tractable, cutting cost from quadratic to near-linear while actually improving accuracy via implicit outlier filtering. The result is dense, robust correspondences that remain accurate under extreme viewpoint changes, something DUSt3R's pointmaps alone could not reliably provide.
+
 ---
 
 ## 4. MonST3R: A Simple Approach for Estimating Geometry in the Presence of Motion — ICLR25
@@ -115,7 +127,7 @@ The second term is the $\color{red}{\text{regularizer}}$ that keeps the confiden
 - Video depth falls out for free, since the optimized global representation is parameterized directly by camera pose and per-frame depth maps.
 
 <div align="center">
-    <img src="figures/monst3r_arch_fig3.png" alt="MonST3R dynamic global point cloud and camera pose pipeline" width="700">
+    <img src="figures/monst3r_arch_fig3.png" alt="MonST3R dynamic global point cloud and camera pose pipeline" width="800">
     <p><em>Figure: MonST3R's sliding-window pairwise pointmap/flow estimation feeding a global optimization over point cloud and camera parameters.</em></p>
 </div>
 
@@ -128,6 +140,10 @@ The second term is the $\color{red}{\text{regularizer}}$ that keeps the confiden
 - Treating a dynamic scene as a sequence of per-timestep pointmaps in a shared coordinate frame is a minimal, elegant generalization of the static two-view pointmap representation, with moving objects naturally appearing at different 3D locations over time.
 - Cross-checking optical flow predicted from estimated geometry against an independent off-the-shelf flow estimate is an effective self-consistency signal for distinguishing static from dynamic regions, without any ground-truth motion segmentation labels.
 - Global, all-pairs optimization (as in DUSt3R) doesn't scale to video; a sliding temporal window over pairwise estimates is a practical, much cheaper substitute that still allows injecting video-specific priors (trajectory smoothness, flow consistency).
+
+**TL;DR**
+
+MonST3R extends DUSt3R to dynamic videos by predicting a separate pointmap per timestep in a shared coordinate frame, letting moving objects simply occupy different 3D locations across frames, with only lightweight fine-tuning of the decoder/heads on a small dynamic-scene dataset mixture. Per-frame camera pose is recovered via single-view PnP+RANSAC instead of DUSt3R's two-view alignment, and a flow-consistency check distinguishes static from dynamic regions without ground-truth motion labels. A sliding temporal window of pairwise estimates, jointly optimized with trajectory-smoothness and flow-consistency losses, replaces DUSt3R's expensive all-pairs global alignment and yields camera poses, depth, and a dynamic point cloud for full videos.
 
 ---
 
@@ -156,6 +172,10 @@ The second term is the $\color{red}{\text{regularizer}}$ that keeps the confiden
 - Multi-task supervision over redundant, derivable quantities (camera, depth, point map, tracks) is not wasteful: it acts as a strong regularizer and measurably improves accuracy on every individual task versus training on a subset.
 - Decomposing a complex output (point maps) into simpler, independently-supervised components (depth + camera) and recombining them at inference can beat predicting the complex output directly, even though both are jointly trained.
 - Feed-forward predictions are accurate enough to serve as a strong initializer for classical Bundle Adjustment, eliminating the need for triangulation/iterative refinement and making BA-refined results both faster and more accurate than traditional pipelines.
+
+**TL;DR**
+
+VGGT drops the pairwise formulation entirely: a plain large transformer with alternating frame-wise and global self-attention directly predicts cameras, depth, point maps, and point tracks for one to hundreds of images in a single feed-forward pass. Multi-task supervision over these redundant, derivable quantities acts as a strong regularizer, boosting accuracy on every individual task rather than diluting it. The result outperforms optimization-heavy SfM/MVS pipelines even without post-processing, though predictions can optionally be refined with classic Bundle Adjustment for extra accuracy.
 
 ---
 
@@ -186,3 +206,7 @@ The second term is the $\color{red}{\text{regularizer}}$ that keeps the confiden
 - Registers are not just an efficiency trick: they end up encoding reusable, transferable global scene representations useful beyond reconstruction (e.g., VLA models, language alignment).
 - Redundant prediction heads can be replaced by redundant losses on a single shared head: multi-task supervision still helps, but doesn't require dedicated output heads per task, saving substantial memory.
 - Scaling training data for dynamic/internet-video content requires building automated, high-quality annotation pipelines (model-assisted filtering + geometric verification) and self-supervised teacher-student training to safely exploit unlabeled video at scale.
+
+**TL;DR**
+
+VGGT-Ω pushes VGGT's feed-forward formula to much larger scale (0.2B to 10B parameters, thousands to millions of training sequences), showing reconstruction accuracy improves with a consistent power-law trend much like LLMs and other foundation models. Register attention restricts cross-frame communication in a quarter of the global-attention layers to a small set of registers, cutting memory/FLOPs substantially with no measured accuracy loss, and these registers turn out to encode reusable global scene information useful beyond reconstruction. A simplified architecture (single depth + camera heads instead of four task-specific heads) and a new large-scale mined-and-filtered video annotation pipeline together extend coverage to dynamic scenes while reducing training cost relative to VGGT.
