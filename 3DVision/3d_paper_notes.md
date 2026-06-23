@@ -149,7 +149,7 @@ MonST3R extends DUSt3R to dynamic videos by predicting a separate pointmap per t
 - A model trained only on static scenes can fail on dynamic ones in subtle, systematic ways (aligning to the wrong moving object, mis-placing dynamic foreground depth) that stem purely from training-data distribution, not architecture, so this is fixable by targeted fine-tuning instead of redesign.
 - Treating a dynamic scene as a sequence of per-timestep pointmaps in a shared coordinate frame is a minimal, elegant generalization of the static two-view pointmap representation, with moving objects naturally appearing at different 3D locations over time.
 - Cross-checking optical flow predicted from estimated geometry against an independent off-the-shelf flow estimate is an effective self-consistency signal for distinguishing static from dynamic regions, without any ground-truth motion segmentation labels.
-- Global, all-pairs optimization (as in DUSt3R) doesn't scale to video; a sliding temporal window over pairwise estimates is a practical, much cheaper substitute that still allows injecting video-specific priors (trajectory smoothness, flow consistency).
+- Global, all-pairs optimization (as in DUSt3R) doesn't scale to video; a $\color{red}{\text{sliding}}$ $\color{red}{\text{temporal}}$ $\color{red}{\text{window}}$ over pairwise estimates is a practical, much cheaper substitute that still allows injecting video-specific priors (trajectory smoothness, flow consistency).
 
 [↑ Back to TOC](#toc)
 
@@ -213,6 +213,17 @@ VGGT-Ω pushes VGGT's feed-forward formula to much larger scale (0.2B to 10B par
 **Pros and Cons**:
 - **Pros:** register attention cuts memory/FLOPs substantially with no measurable accuracy loss, the model scales predictably (power-law-like) with parameters and data, and it extends coverage to dynamic scenes while also being cheaper to train than VGGT.
 - **Cons:** dropping the point-map and tracking heads trades off some task-specific outputs for efficiency, and the gains depend heavily on the new large-scale mined annotation pipeline, which adds significant data-engineering complexity outside the model itself.
+
+**Q&As**  
+Q1: As for Dynamic Reconstruction, what special techniques they used?
+
+VGGT-Ω's main trick is a **representation choice rather than a dedicated motion module**:
+- **Drop point maps; predict only depth + camera per frame.** Point maps (used by VGGT, DUSt3R, MonST3R) bake camera motion and scene motion together into one 3D field, fine for static scenes, but for dynamic scenes this then requires segmenting out moving pixels (MonST3R's approach) or extending to "dynamic point maps." VGGT-Ω avoids the coupling entirely: independent per-frame depth + camera parameters mean a moving object's depth is just camera-relative depth, with no global rigid point-cloud consistency required.
+- **Avoid ray maps too**, since they add an expensive dense output and can entangle camera information with pixel-wise appearance changes (e.g., a stationary camera filming a dancer has large *scene* motion but fixed *camera* parameters, which ray maps would conflate).
+- **No explicit motion masks/outputs.** The model predicts nothing that requires labeling "what is moving," letting the data-driven prior implicitly learn this instead of hand-crafted non-rigid-SfM constraints (low-rank/local-rigidity priors used by classical methods).
+- **Data engineering for dynamic supervision:** the 40M-video annotation pipeline uses Grounding DINO to detect and mask out dynamic regions (people, cars) so depth/camera annotations aren't corrupted by motion, while still keeping ~200K dynamic scenes in training (vs. 600K static).
+- **Self-supervised teacher-student training** adds robustness for free: random frame reordering and patch masking during the unlabeled-video phase force invariance to frame order and appearance changes, directly helping motion generalization.
+- **Emergent, not engineered, motion-awareness** (Fig. 9 in the paper): without any motion labels, optical flow, or explicit probes, PCA + k-means clustering of intermediate tokens spontaneously separates moving objects from the static background, confirming the reconstruction objective alone teaches the model to localize motion.
 
 **Key Takeaways**
 - Feed-forward 3D reconstruction models follow a power-law-like scaling trend with both model size and data size, mirroring LLM/vision-foundation-model scaling and suggesting reconstruction is a strong, scalable proxy task for general spatial understanding.
